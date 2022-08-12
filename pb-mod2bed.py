@@ -1,7 +1,4 @@
-""" 
-This script converts pacbio modified bam files to expanded bed files in the following format:
-
-"""
+#!/usr/bin/env python
 
 import click
 import pysam
@@ -65,7 +62,12 @@ def get_read_names(file):
     help="output path",
 )
 def pbmod2bed(bam, read_names, can_prob, mod_prob, out):
+    """
+    This script converts pacbio modified bam files to expanded bed files in the following format:
 
+    read_name start end methylation_status pass_tag
+
+    """
     if read_names:
         click.echo("\nParsing file containing read names...")
         names = get_read_names(read_names)
