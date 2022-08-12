@@ -3,6 +3,7 @@
 import click
 import pysam
 import sys
+from scipy.signal import savgol_filter
 
 
 def binerize_mod_call(call, min_prob=0.5, max_prob=0.5):
@@ -65,7 +66,7 @@ def pbmod2bed(bam, read_names, can_prob, mod_prob, out):
     """
     This script converts pacbio modified bam files to expanded bed files in the following format:
 
-    read_name start end methylation_status pass_tag
+    read_name start end methylation_probability smoothed_methylation_probability pass_tag
 
     """
     if read_names:
@@ -90,17 +91,46 @@ def pbmod2bed(bam, read_names, can_prob, mod_prob, out):
                 match += 1
         mod_dict = read.modified_bases
         pass_tag = read.get_tag("np")
-        for mod_key, mod_list in mod_dict.items():
-            for mod in mod_list:
-                pos = mod[0]
-                status = binerize_mod_call(mod[1], min_prob=can_prob, max_prob=mod_prob)
-                print(
-                    "\t".join(
-                        [read.qname, str(pos), str(pos + 1), status, str(pass_tag)]
-                    ),
-                    end="\n",
-                    file=out,
-                )
+
+        positions = []
+        probs = []
+        if len(list(mod_dict.values())) != 1:
+            continue
+        for (pos, mod) in list(mod_dict.values())[0]:
+            positions.append(pos)
+            probs.append(round(mod / 255, 3))
+
+        length = len(probs)
+        if length <= 5:
+            window = 1
+            poly = 0
+        elif (length > 5) & (length <= 20):
+            window = 5
+            poly = 3
+        elif (length > 20) & (length <= 50):
+            window = 19
+            poly = 3
+        else:
+            window = 51
+            poly = 3
+        smoothed = savgol_filter(probs, window, poly)
+
+        for pos, prob, smooth in zip(*[positions, probs, smoothed]):
+
+            print(
+                "\t".join(
+                    [
+                        read.qname,
+                        str(pos),
+                        str(pos + 1),
+                        str(prob),
+                        str(smooth),
+                        str(pass_tag),
+                    ]
+                ),
+                end="\n",
+                file=out,
+            )
 
     samfile.close()
     # out_file.close()
