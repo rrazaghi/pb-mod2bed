@@ -2,12 +2,12 @@
 Usage: pb-mod2bed.py [OPTIONS] BAM
 
   This script converts pacbio modified bam files to expanded bed files in the
-  following format: 
-  
-  read_name start end methylation_status pass_tag
+  following format:
+
+  read_name start end methylation_probability smoothed_methylation_probability pass_tag
 
 Options:
-  -n, --read_names PATH  filter analysis based on file containing reamv d names
+  -n, --read_names PATH  filter analysis based on file containing read names
                          per line
   -u, --can_prob FLOAT   probability threshold for canonical bases
   -m, --mod_prob FLOAT   probability threshold for modified bases
